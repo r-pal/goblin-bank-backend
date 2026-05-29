@@ -26,6 +26,12 @@ export function asOptionalInt(v: unknown, field: string): number | undefined {
   return asInt(v, field);
 }
 
+export function asInterestRatePercent(v: unknown, field: string): number {
+  const rate = asInt(v, field);
+  if (rate < 0) throw new HttpError(400, `${field} must be >= 0`);
+  return rate;
+}
+
 export function parsePriceCoins(v: unknown, field: string): number {
   if (typeof v === "number") {
     if (!Number.isInteger(v) || v < 0) {

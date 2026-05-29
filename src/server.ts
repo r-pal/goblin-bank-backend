@@ -2,6 +2,7 @@ import express from "express";
 import type { Request, Response, NextFunction } from "express";
 
 import { initDb, openDb } from "./db.js";
+import { startHourlyInterest } from "./interest.js";
 import { startHalfHourSnapshots } from "./snapshots.js";
 import { HttpError } from "./validate.js";
 
@@ -19,6 +20,7 @@ app.use(express.json());
 const db = openDb();
 initDb(db);
 startHalfHourSnapshots(db);
+startHourlyInterest(db);
 
 app.get("/healthz", (_req, res) => res.json({ ok: true }));
 app.use("/api-docs", swaggerRouter());

@@ -4,12 +4,12 @@ export const openApiSpec = {
     title: "Goblin Bank API",
     version: "0.1.0",
     description:
-      "Goblin Bank backend for hovel accounts, wares, messages, and half-hour wealth/price snapshots.",
+      "Goblin Bank backend for hovel accounts, wares, messages, hourly interest, and half-hour wealth/price snapshots.",
   },
   servers: [{ url: "http://localhost:4000", description: "Local dev" }],
   tags: [
     { name: "Market", description: "Formatted market display" },
-    { name: "Accounts", description: "Hovel coin balances" },
+    { name: "Accounts", description: "Hovel coin balances and interest rates" },
     { name: "Wares", description: "Market wares" },
     { name: "Messages", description: "Market messages" },
     { name: "History", description: "Time-series for charts" },
@@ -80,6 +80,51 @@ export const openApiSpec = {
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/OkResponse" },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/BadRequest" },
+          "404": { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/api/accounts/{hovelSlug}/interest-rate": {
+      get: {
+        tags: ["Accounts"],
+        summary: "Get a hovel's interest rate",
+        parameters: [{ $ref: "#/components/parameters/hovelSlug" }],
+        responses: {
+          "200": {
+            description: "Interest rate",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/InterestRateResponse" },
+              },
+            },
+          },
+          "404": { $ref: "#/components/responses/NotFound" },
+        },
+      },
+      patch: {
+        tags: ["Accounts"],
+        summary: "Set a hovel's interest rate",
+        description:
+          "Rate is a whole-number percent applied hourly on the hour (default 12). Applies to negative balances too.",
+        parameters: [{ $ref: "#/components/parameters/hovelSlug" }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/InterestRateRequest" },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Interest rate updated",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/InterestRateResponse" },
               },
             },
           },
@@ -358,6 +403,26 @@ export const openApiSpec = {
           },
         },
         required: ["amount"],
+      },
+      InterestRateRequest: {
+        type: "object",
+        properties: {
+          interestRatePercent: {
+            type: "integer",
+            minimum: 0,
+            example: 12,
+            description: "Hourly interest as a whole-number percent (e.g. 12 means +12%)",
+          },
+        },
+        required: ["interestRatePercent"],
+      },
+      InterestRateResponse: {
+        type: "object",
+        properties: {
+          hovelSlug: { type: "string", example: "muckroot-ha" },
+          interestRatePercent: { type: "integer", minimum: 0, example: 12 },
+        },
+        required: ["hovelSlug", "interestRatePercent"],
       },
       WareCreateRequest: {
         type: "object",

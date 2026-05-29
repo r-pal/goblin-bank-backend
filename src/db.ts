@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
+import { DEFAULT_INTEREST_RATE_PERCENT } from "./interest.js";
 
 export type Db = Database.Database;
 
@@ -29,7 +30,8 @@ export function initDb(db: Db): void {
     CREATE TABLE IF NOT EXISTS accounts (
       hovelSlug TEXT PRIMARY KEY,
       name TEXT NOT NULL,
-      balanceCoins INTEGER NOT NULL
+      balanceCoins INTEGER NOT NULL,
+      interestRatePercent INTEGER NOT NULL DEFAULT ${DEFAULT_INTEREST_RATE_PERCENT}
     );
 
     CREATE TABLE IF NOT EXISTS wares (
@@ -65,7 +67,17 @@ export function initDb(db: Db): void {
     );
   `);
 
+  ensureInterestRateColumn(db);
   seedAccounts(db);
+}
+
+function ensureInterestRateColumn(db: Db): void {
+  const cols = db.prepare("PRAGMA table_info(accounts)").all() as Array<{ name: string }>;
+  if (cols.some((c) => c.name === "interestRatePercent")) return;
+
+  db.exec(
+    `ALTER TABLE accounts ADD COLUMN interestRatePercent INTEGER NOT NULL DEFAULT ${DEFAULT_INTEREST_RATE_PERCENT}`
+  );
 }
 
 function seedAccounts(db: Db): void {
@@ -73,10 +85,12 @@ function seedAccounts(db: Db): void {
   if (count.c > 0) return;
 
   const insert = db.prepare(
-    "INSERT INTO accounts (hovelSlug, name, balanceCoins) VALUES (?, ?, ?)"
+    "INSERT INTO accounts (hovelSlug, name, balanceCoins, interestRatePercent) VALUES (?, ?, ?, ?)"
   );
   const tx = db.transaction(() => {
-    for (const h of DEFAULT_HOVELS) insert.run(h.slug, h.name, 0);
+    for (const h of DEFAULT_HOVELS) {
+      insert.run(h.slug, h.name, 0, DEFAULT_INTEREST_RATE_PERCENT);
+    }
   });
   tx();
 }

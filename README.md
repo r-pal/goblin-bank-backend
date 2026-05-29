@@ -29,6 +29,16 @@ Server defaults to `http://localhost:4000`.
 curl http://localhost:4000/api/market
 ```
 
+Interest accrues **every hour on the hour** at each hovel’s configured rate (default **12%**). Negative balances compound the same way (e.g. −100 becomes −112 at 12%).
+
+```bash
+curl http://localhost:4000/api/accounts/muckroot-ha/interest-rate
+
+curl -X PATCH http://localhost:4000/api/accounts/muckroot-ha/interest-rate \
+  -H 'content-type: application/json' \
+  -d '{"interestRatePercent":15}'
+```
+
 Change coins (positive adds, negative removes; balances may go negative):
 
 ```bash
