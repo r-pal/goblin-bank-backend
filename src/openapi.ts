@@ -38,7 +38,7 @@ export const openApiSpec = {
         tags: ["Market"],
         summary: "Get formatted market state",
         description:
-          "Returns display strings for accounts, wares, and messages (currency symbol Ǥ).",
+          "Returns display strings for accounts and messages (currency symbol Ǥ). Wares include a `trend` field for frontend styling.",
         responses: {
           "200": {
             description: "Market state",
@@ -47,7 +47,10 @@ export const openApiSpec = {
                 schema: { $ref: "#/components/schemas/MarketResponse" },
                 example: {
                   accounts: ["Muckroot Ha Ǥ20,000", "Snaggle Den Ǥ0"],
-                  wares: ["Frogs Ǥ1.20"],
+                  wares: [
+                    { name: "Frogs", price: "▲ Ǥ120", trend: "up" },
+                    { name: "Moss", price: "Ǥ5", trend: null },
+                  ],
                   messages: ["Welcome to the Goblin Market"],
                 },
               },
@@ -56,49 +59,24 @@ export const openApiSpec = {
         },
       },
     },
-    "/api/accounts/{hovelSlug}/coin/add": {
+    "/api/accounts/{hovelSlug}/coin-change": {
       post: {
         tags: ["Accounts"],
-        summary: "Add coins to a hovel account",
+        summary: "Change a hovel account balance",
+        description:
+          "Positive `amount` adds coins; negative `amount` removes coins. Balances may go negative.",
         parameters: [{ $ref: "#/components/parameters/hovelSlug" }],
         requestBody: {
           required: true,
           content: {
             "application/json": {
-              schema: { $ref: "#/components/schemas/CoinAmountRequest" },
+              schema: { $ref: "#/components/schemas/CoinChangeRequest" },
             },
           },
         },
         responses: {
           "200": {
-            description: "Coins added",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/OkResponse" },
-              },
-            },
-          },
-          "400": { $ref: "#/components/responses/BadRequest" },
-          "404": { $ref: "#/components/responses/NotFound" },
-        },
-      },
-    },
-    "/api/accounts/{hovelSlug}/coin/remove": {
-      post: {
-        tags: ["Accounts"],
-        summary: "Remove coins from a hovel account",
-        parameters: [{ $ref: "#/components/parameters/hovelSlug" }],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: { $ref: "#/components/schemas/CoinAmountRequest" },
-            },
-          },
-        },
-        responses: {
-          "200": {
-            description: "Coins removed",
+            description: "Balance updated",
             content: {
               "application/json": {
                 schema: { $ref: "#/components/schemas/OkResponse" },
@@ -267,7 +245,7 @@ export const openApiSpec = {
       get: {
         tags: ["History"],
         summary: "Ware price history (series-by-ware)",
-        description: "Each point `v` is price in cents. Timestamps are ISO 8601.",
+        description: "Each point `v` is price in whole coins. Timestamps are ISO 8601.",
         responses: {
           "200": {
             description: "Ware history",
@@ -342,19 +320,42 @@ export const openApiSpec = {
         properties: { error: { type: "string" } },
         required: ["error"],
       },
+      WareMarketItem: {
+        type: "object",
+        properties: {
+          name: { type: "string", example: "Frogs" },
+          price: {
+            type: "string",
+            description: "Optional ▲/▼ prefix plus Ǥ amount",
+            example: "▲ Ǥ120",
+          },
+          trend: {
+            type: "string",
+            nullable: true,
+            enum: ["up", "down", null],
+            description:
+              "`up` or `down` vs the last snapshot price; `null` if unchanged or no snapshot yet",
+          },
+        },
+        required: ["name", "price", "trend"],
+      },
       MarketResponse: {
         type: "object",
         properties: {
           accounts: { type: "array", items: { type: "string" } },
-          wares: { type: "array", items: { type: "string" } },
+          wares: { type: "array", items: { $ref: "#/components/schemas/WareMarketItem" } },
           messages: { type: "array", items: { type: "string" } },
         },
         required: ["accounts", "wares", "messages"],
       },
-      CoinAmountRequest: {
+      CoinChangeRequest: {
         type: "object",
         properties: {
-          amount: { type: "integer", minimum: 1, example: 20000 },
+          amount: {
+            type: "integer",
+            example: 20000,
+            description: "Signed whole-coin delta (positive adds, negative removes)",
+          },
         },
         required: ["amount"],
       },
@@ -362,7 +363,12 @@ export const openApiSpec = {
         type: "object",
         properties: {
           name: { type: "string", example: "Frogs" },
-          price: { type: "string", example: "1.20", description: "Decimal price string" },
+          price: {
+            type: "integer",
+            minimum: 0,
+            example: 120,
+            description: "Whole-coin price (displayed as Ǥ120 in /api/market)",
+          },
         },
         required: ["name", "price"],
       },
@@ -370,7 +376,12 @@ export const openApiSpec = {
         type: "object",
         properties: {
           name: { type: "string", example: "Frogs" },
-          price: { type: "string", example: "1.20" },
+          price: {
+            type: "integer",
+            minimum: 0,
+            example: 120,
+            description: "Whole-coin price (displayed as Ǥ120 in /api/market)",
+          },
         },
       },
       MessageCreateRequest: {

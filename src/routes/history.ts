@@ -27,7 +27,7 @@ export function historyRouter(db: Db): Router {
     const rows = db
       .prepare(
         `
-        SELECT s.takenAt as takenAt, w.wareId as key, wr.name as label, w.priceCents as v
+        SELECT s.takenAt as takenAt, w.wareId as key, wr.name as label, w.priceCoins as v
         FROM snapshots s
         JOIN snapshot_wares w ON w.snapshotId = s.id
         JOIN wares wr ON wr.id = w.wareId
@@ -53,4 +53,3 @@ function rowsToSeries(
   }
   return [...map.values()];
 }
-

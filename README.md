@@ -19,7 +19,9 @@ Server defaults to `http://localhost:4000`.
 ## Main endpoint
 
 - `GET /api/market`
-  - Returns `{ accounts: string[]; wares: string[]; messages: string[] }`
+  - Returns `{ accounts: string[]; wares: WareMarketItem[]; messages: string[] }`
+  - Account amounts are prefixed with **Ǥ** (whole coins, no decimals)
+  - Each ware has `name`, `price` (optional **▲**/**▼** plus **Ǥ** amount), and `trend` (`"up"`, `"down"`, or `null`)
 
 ## Examples
 
@@ -27,10 +29,10 @@ Server defaults to `http://localhost:4000`.
 curl http://localhost:4000/api/market
 ```
 
-Add coins:
+Change coins (positive adds, negative removes; balances may go negative):
 
 ```bash
-curl -X POST http://localhost:4000/api/accounts/muckroot-ha/coin/add \
+curl -X POST http://localhost:4000/api/accounts/muckroot-ha/coin-change \
   -H 'content-type: application/json' \
   -d '{"amount":20000}'
 ```
@@ -40,7 +42,21 @@ Create a ware:
 ```bash
 curl -X POST http://localhost:4000/api/wares \
   -H 'content-type: application/json' \
-  -d '{"name":"Frogs","price":"1.20"}'
+  -d '{"name":"Frogs","price":120}'
+```
+
+Messages (create, edit, delete):
+
+```bash
+curl -X POST http://localhost:4000/api/messages \
+  -H 'content-type: application/json' \
+  -d '{"text":"Welcome to the Goblin Market"}'
+
+curl -X PATCH http://localhost:4000/api/messages/{id} \
+  -H 'content-type: application/json' \
+  -d '{"text":"Updated message"}'
+
+curl -X DELETE http://localhost:4000/api/messages/{id}
 ```
 
 Force a snapshot (for chart demos):

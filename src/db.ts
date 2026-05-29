@@ -29,13 +29,13 @@ export function initDb(db: Db): void {
     CREATE TABLE IF NOT EXISTS accounts (
       hovelSlug TEXT PRIMARY KEY,
       name TEXT NOT NULL,
-      balanceCoins INTEGER NOT NULL CHECK (balanceCoins >= 0)
+      balanceCoins INTEGER NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS wares (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
-      priceCents INTEGER NOT NULL CHECK (priceCents >= 0)
+      priceCoins INTEGER NOT NULL CHECK (priceCoins >= 0)
     );
 
     CREATE TABLE IF NOT EXISTS messages (
@@ -51,7 +51,7 @@ export function initDb(db: Db): void {
     CREATE TABLE IF NOT EXISTS snapshot_accounts (
       snapshotId TEXT NOT NULL,
       hovelSlug TEXT NOT NULL,
-      balanceCoins INTEGER NOT NULL CHECK (balanceCoins >= 0),
+      balanceCoins INTEGER NOT NULL,
       PRIMARY KEY (snapshotId, hovelSlug),
       FOREIGN KEY (snapshotId) REFERENCES snapshots(id) ON DELETE CASCADE
     );
@@ -59,7 +59,7 @@ export function initDb(db: Db): void {
     CREATE TABLE IF NOT EXISTS snapshot_wares (
       snapshotId TEXT NOT NULL,
       wareId TEXT NOT NULL,
-      priceCents INTEGER NOT NULL CHECK (priceCents >= 0),
+      priceCoins INTEGER NOT NULL CHECK (priceCoins >= 0),
       PRIMARY KEY (snapshotId, wareId),
       FOREIGN KEY (snapshotId) REFERENCES snapshots(id) ON DELETE CASCADE
     );
@@ -80,4 +80,3 @@ function seedAccounts(db: Db): void {
   });
   tx();
 }
-

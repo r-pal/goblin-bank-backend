@@ -3,25 +3,32 @@ const coinFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-const priceFormatter = new Intl.NumberFormat("en-US", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
 export function formatCoins(coins: number): string {
-  return `Ǥ${coinFormatter.format(coins)}`;
-}
-
-export function formatPriceCents(priceCents: number): string {
-  const value = priceCents / 100;
-  return `Ǥ${priceFormatter.format(value)}`;
+  const sign = coins < 0 ? "-" : "";
+  return `${sign}Ǥ${coinFormatter.format(Math.abs(coins))}`;
 }
 
 export function formatAccount(name: string, balanceCoins: number): string {
   return `${name} ${formatCoins(balanceCoins)}`;
 }
 
-export function formatWare(name: string, priceCents: number): string {
-  return `${name} ${formatPriceCents(priceCents)}`;
-}
+export type PriceTrend = "up" | "down";
 
+export type WareMarketItem = {
+  name: string;
+  price: string;
+  trend: PriceTrend | null;
+};
+
+export function buildWareMarketItem(
+  name: string,
+  priceCoins: number,
+  trend?: PriceTrend
+): WareMarketItem {
+  const arrow = trend === "up" ? "▲ " : trend === "down" ? "▼ " : "";
+  return {
+    name,
+    price: `${arrow}${formatCoins(priceCoins)}`,
+    trend: trend ?? null,
+  };
+}

@@ -14,8 +14,8 @@ export function takeSnapshot(db: Db, takenAtIso = new Date().toISOString()): { i
     `);
 
     db.exec(`
-      INSERT INTO snapshot_wares (snapshotId, wareId, priceCents)
-      SELECT '${id}', id, priceCents
+      INSERT INTO snapshot_wares (snapshotId, wareId, priceCoins)
+      SELECT '${id}', id, priceCoins
       FROM wares;
     `);
   });
@@ -52,4 +52,3 @@ export function startHalfHourSnapshots(db: Db): { stop: () => void } {
     },
   };
 }
-

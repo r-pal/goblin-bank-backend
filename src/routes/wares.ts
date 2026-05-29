@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import type { Db } from "../db.js";
-import { HttpError, asNonEmptyString, parsePriceToCents } from "../validate.js";
+import { HttpError, asNonEmptyString, parsePriceCoins } from "../validate.js";
 
 export function waresRouter(db: Db): Router {
   const router = Router();
@@ -9,13 +9,13 @@ export function waresRouter(db: Db): Router {
   router.post("/", (req, res) => {
     const body = req.body ?? {};
     const name = asNonEmptyString(body.name, "name");
-    const priceCents = parsePriceToCents(body.price, "price");
+    const priceCoins = parsePriceCoins(body.price, "price");
     const id = randomUUID();
 
-    db.prepare("INSERT INTO wares (id, name, priceCents) VALUES (?, ?, ?)").run(
+    db.prepare("INSERT INTO wares (id, name, priceCoins) VALUES (?, ?, ?)").run(
       id,
       name,
-      priceCents
+      priceCoins
     );
 
     res.status(201).json({ id });
@@ -27,7 +27,7 @@ export function waresRouter(db: Db): Router {
     const updates: Array<{ sql: string; value: unknown }> = [];
 
     if (body.name !== undefined) updates.push({ sql: "name = ?", value: asNonEmptyString(body.name, "name") });
-    if (body.price !== undefined) updates.push({ sql: "priceCents = ?", value: parsePriceToCents(body.price, "price") });
+    if (body.price !== undefined) updates.push({ sql: "priceCoins = ?", value: parsePriceCoins(body.price, "price") });
     if (updates.length === 0) throw new HttpError(400, "no fields to update");
 
     const existing = db.prepare("SELECT id FROM wares WHERE id = ?").get(id) as { id: string } | undefined;
@@ -49,4 +49,3 @@ export function waresRouter(db: Db): Router {
 
   return router;
 }
-
