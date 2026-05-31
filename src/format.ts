@@ -20,6 +20,15 @@ export type WareMarketItem = {
   trend: PriceTrend | null;
 };
 
+export function resolvePriceTrend(
+  priceCoins: number,
+  trendReferencePriceCoins: number
+): PriceTrend | undefined {
+  if (priceCoins > trendReferencePriceCoins) return "up";
+  if (priceCoins < trendReferencePriceCoins) return "down";
+  return undefined;
+}
+
 export function buildWareMarketItem(
   name: string,
   priceCoins: number,
@@ -27,7 +36,7 @@ export function buildWareMarketItem(
 ): WareMarketItem {
   return {
     name,
-    price: `${formatCoins(priceCoins)}`,
+    price: formatCoins(priceCoins),
     trend: trend ?? null,
   };
 }

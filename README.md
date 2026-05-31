@@ -16,8 +16,9 @@ Server defaults to `http://localhost:4000`.
 - Swagger UI: `http://localhost:4000/api-docs`
 - OpenAPI JSON: `http://localhost:4000/api-docs/openapi.json`
 
-## Main endpoint
+## Main endpoints
 
+- `GET /api/tickertape` — LED tickertape: `{ accounts: string[], wares: { name, price, trend }[], messages: string[] }`
 - `GET /api/market`
   - Returns `{ accounts: string[]; wares: WareMarketItem[]; messages: string[] }`
   - Account amounts are prefixed with **Ǥ** (whole coins, no decimals)
@@ -26,6 +27,7 @@ Server defaults to `http://localhost:4000`.
 ## Examples
 
 ```bash
+curl http://localhost:4000/api/tickertape
 curl http://localhost:4000/api/market
 ```
 

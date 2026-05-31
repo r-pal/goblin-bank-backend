@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import type { Db } from "../db.js";
 import { buildWareMarketItem, formatAccount, resolvePriceTrend } from "../format.js";
 
-export function getMarket(db: Db) {
+export function getTickertape(db: Db) {
   return (_req: Request, res: Response) => {
     const accountsRows = db
       .prepare("SELECT name, balanceCoins FROM accounts ORDER BY name ASC")

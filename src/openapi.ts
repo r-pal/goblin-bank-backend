@@ -9,6 +9,7 @@ export const openApiSpec = {
   servers: [{ url: "http://localhost:4000", description: "Local dev" }],
   tags: [
     { name: "Market", description: "Formatted market display" },
+    { name: "Tickertape", description: "LED tickertape string feed" },
     { name: "Accounts", description: "Hovel coin balances and interest rates" },
     { name: "Wares", description: "Market wares" },
     { name: "Messages", description: "Market messages" },
@@ -49,7 +50,33 @@ export const openApiSpec = {
                 example: {
                   accounts: ["Muckroot Ha Ǥ20,000", "Snaggle Den Ǥ0"],
                   wares: [
-                    { name: "Frogs", price: "▲ Ǥ120", trend: "up" },
+                    { name: "Frogs", price: "Ǥ120", trend: "up" },
+                    { name: "Moss", price: "Ǥ5", trend: null },
+                  ],
+                  messages: ["Welcome to the Goblin Market"],
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/tickertape": {
+      get: {
+        tags: ["Tickertape"],
+        summary: "LED tickertape feed",
+        description:
+          "Returns hovel and message lines as strings; wares as objects with `trend` for arrow colouring.",
+        responses: {
+          "200": {
+            description: "Tickertape lines",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/TickertapeResponse" },
+                example: {
+                  accounts: ["Muckroot Ha Ǥ20,000", "Snaggle Den Ǥ0"],
+                  wares: [
+                    { name: "Frogs", price: "Ǥ120", trend: "up" },
                     { name: "Moss", price: "Ǥ5", trend: null },
                   ],
                   messages: ["Welcome to the Goblin Market"],
@@ -460,6 +487,22 @@ export const openApiSpec = {
           },
         },
         required: ["name", "price", "trend"],
+      },
+      TickertapeResponse: {
+        type: "object",
+        properties: {
+          accounts: {
+            type: "array",
+            items: { type: "string" },
+            description: "Hovel name and balance, e.g. Muckroot Ha Ǥ20,000",
+          },
+          wares: {
+            type: "array",
+            items: { $ref: "#/components/schemas/WareMarketItem" },
+          },
+          messages: { type: "array", items: { type: "string" } },
+        },
+        required: ["accounts", "wares", "messages"],
       },
       MarketResponse: {
         type: "object",

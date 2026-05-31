@@ -7,6 +7,7 @@ import { startHalfHourSnapshots } from "./snapshots.js";
 import { HttpError } from "./validate.js";
 
 import { getMarket } from "./routes/market.js";
+import { getTickertape } from "./routes/tickertape.js";
 import { accountsRouter } from "./routes/accounts.js";
 import { waresRouter } from "./routes/wares.js";
 import { messagesRouter } from "./routes/messages.js";
@@ -48,6 +49,7 @@ app.get("/healthz", (_req, res) => res.json({ ok: true }));
 app.use("/api-docs", swaggerRouter());
 
 app.get("/api/market", getMarket(db));
+app.get("/api/tickertape", getTickertape(db));
 app.use("/api/accounts", accountsRouter(db));
 app.use("/api/wares", waresRouter(db));
 app.use("/api/messages", messagesRouter(db));
