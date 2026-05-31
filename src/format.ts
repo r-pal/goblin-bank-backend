@@ -3,9 +3,12 @@ const coinFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
+/** Goblin coin symbol (₲) */
+export const COIN_SYMBOL = "₲";
+
 export function formatCoins(coins: number): string {
   const sign = coins < 0 ? "-" : "";
-  return `${sign}Ǥ${coinFormatter.format(Math.abs(coins))}`;
+  return `${sign}${COIN_SYMBOL}${coinFormatter.format(Math.abs(coins))}`;
 }
 
 export function formatAccount(name: string, balanceCoins: number): string {

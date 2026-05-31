@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import type { Db } from "../db.js";
+import { trendLockForPrice } from "../trend.js";
 import { HttpError, asNonEmptyString, parsePriceCoins } from "../validate.js";
 
 export function waresRouter(db: Db): Router {
@@ -21,7 +22,7 @@ export function waresRouter(db: Db): Router {
     const id = randomUUID();
 
     db.prepare(
-      "INSERT INTO wares (id, name, priceCoins, trendReferencePriceCoins) VALUES (?, ?, ?, ?)"
+      "INSERT INTO wares (id, name, priceCoins, trendReferencePriceCoins, trendDirection, trendUntil) VALUES (?, ?, ?, ?, NULL, NULL)"
     ).run(id, name, priceCoins, priceCoins);
 
     res.status(201).json({ id });
@@ -33,11 +34,23 @@ export function waresRouter(db: Db): Router {
     const updates: Array<{ sql: string; value: unknown }> = [];
 
     if (body.name !== undefined) updates.push({ sql: "name = ?", value: asNonEmptyString(body.name, "name") });
-    if (body.price !== undefined) updates.push({ sql: "priceCoins = ?", value: parsePriceCoins(body.price, "price") });
+    const newPriceCoins =
+      body.price !== undefined ? parsePriceCoins(body.price, "price") : undefined;
+    if (newPriceCoins !== undefined) {
+      updates.push({ sql: "priceCoins = ?", value: newPriceCoins });
+    }
     if (updates.length === 0) throw new HttpError(400, "no fields to update");
 
-    const existing = db.prepare("SELECT id FROM wares WHERE id = ?").get(id) as { id: string } | undefined;
+    const existing = db
+      .prepare("SELECT id, trendReferencePriceCoins FROM wares WHERE id = ?")
+      .get(id) as { id: string; trendReferencePriceCoins: number } | undefined;
     if (!existing) throw new HttpError(404, "unknown ware id");
+
+    if (newPriceCoins !== undefined) {
+      const lock = trendLockForPrice(newPriceCoins, existing.trendReferencePriceCoins);
+      updates.push({ sql: "trendDirection = ?", value: lock.trendDirection });
+      updates.push({ sql: "trendUntil = ?", value: lock.trendUntil });
+    }
 
     const setSql = updates.map((u) => u.sql).join(", ");
     const params = updates.map((u) => u.value);

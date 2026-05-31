@@ -21,8 +21,8 @@ Server defaults to `http://localhost:4000`.
 - `GET /api/tickertape` — LED tickertape: `{ accounts: string[], wares: { name, price, trend }[], messages: string[] }`
 - `GET /api/market`
   - Returns `{ accounts: string[]; wares: WareMarketItem[]; messages: string[] }`
-  - Account amounts are prefixed with **Ǥ** (whole coins, no decimals)
-  - Each ware has `name`, `price` ( **Ǥ** amount), and `trend` (`"up"`, `"down"`, or `null`). Trend updates immediately on price change; it clears at the next half-hour snapshot if the price is unchanged.
+  - Account amounts are prefixed with **₲** (whole coins, no decimals)
+  - Each ware has `name`, `price` (**₲** amount), and `trend` (`"up"`, `"down"`, or `null`). Trend appears immediately on price change and stays for **at least 30 minutes** (even if a half-hour snapshot runs in between).
 
 ## Examples
 

@@ -40,7 +40,7 @@ export const openApiSpec = {
         tags: ["Market"],
         summary: "Get formatted market state",
         description:
-          "Returns display strings for accounts and messages (currency symbol Ǥ). Wares include a `trend` field for frontend styling.",
+          "Returns display strings for accounts and messages (currency symbol ₲). Wares include a `trend` field for frontend styling.",
         responses: {
           "200": {
             description: "Market state",
@@ -48,10 +48,10 @@ export const openApiSpec = {
               "application/json": {
                 schema: { $ref: "#/components/schemas/MarketResponse" },
                 example: {
-                  accounts: ["Muckroot Ha Ǥ20,000", "Snaggle Den Ǥ0"],
+                  accounts: ["Muckroot Ha ₲20,000", "Snaggle Den ₲0"],
                   wares: [
-                    { name: "Frogs", price: "Ǥ120", trend: "up" },
-                    { name: "Moss", price: "Ǥ5", trend: null },
+                    { name: "Frogs", price: "₲120", trend: "up" },
+                    { name: "Moss", price: "₲5", trend: null },
                   ],
                   messages: ["Welcome to the Goblin Market"],
                 },
@@ -66,7 +66,7 @@ export const openApiSpec = {
         tags: ["Tickertape"],
         summary: "LED tickertape feed",
         description:
-          "Returns hovel and message lines as strings; wares as objects with `trend` for arrow colouring.",
+          "Returns hovel and message lines as strings; wares as objects with `trend` for arrow colouring. Amounts use the ₲ symbol.",
         responses: {
           "200": {
             description: "Tickertape lines",
@@ -74,10 +74,10 @@ export const openApiSpec = {
               "application/json": {
                 schema: { $ref: "#/components/schemas/TickertapeResponse" },
                 example: {
-                  accounts: ["Muckroot Ha Ǥ20,000", "Snaggle Den Ǥ0"],
+                  accounts: ["Muckroot Ha ₲20,000", "Snaggle Den ₲0"],
                   wares: [
-                    { name: "Frogs", price: "Ǥ120", trend: "up" },
-                    { name: "Moss", price: "Ǥ5", trend: null },
+                    { name: "Frogs", price: "₲120", trend: "up" },
+                    { name: "Moss", price: "₲5", trend: null },
                   ],
                   messages: ["Welcome to the Goblin Market"],
                 },
@@ -362,6 +362,24 @@ export const openApiSpec = {
         },
       },
     },
+    "/api/history/interest-rates": {
+      get: {
+        tags: ["History"],
+        summary: "Interest rate history (series-by-hovel)",
+        description:
+          "Returns hourly snapshot interest rates per hovel. Points exist only for snapshots taken after rates were recorded (older snapshots omit this field).",
+        responses: {
+          "200": {
+            description: "Interest rate history",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/HistoryResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
     "/api/history/wares": {
       get: {
         tags: ["History"],
@@ -475,15 +493,15 @@ export const openApiSpec = {
           name: { type: "string", example: "Frogs" },
           price: {
             type: "string",
-            description: "Ǥ amount",
-            example: "Ǥ120",
+            description: "₲ amount",
+            example: "₲120",
           },
           trend: {
             type: "string",
             nullable: true,
             enum: ["up", "down", null],
             description:
-              "`up` or `down` vs the ware's trend baseline; `null` if unchanged. Baseline resets on each half-hour snapshot.",
+              "`up` or `down` when price differs from baseline; held for at least 30 minutes after a price change. `null` if unchanged and no active lock.",
           },
         },
         required: ["name", "price", "trend"],
@@ -494,7 +512,7 @@ export const openApiSpec = {
           accounts: {
             type: "array",
             items: { type: "string" },
-            description: "Hovel name and balance, e.g. Muckroot Ha Ǥ20,000",
+            description: "Hovel name and balance, e.g. Muckroot Ha ₲20,000",
           },
           wares: {
             type: "array",
@@ -600,7 +618,7 @@ export const openApiSpec = {
             type: "integer",
             minimum: 0,
             example: 120,
-            description: "Whole-coin price (displayed as Ǥ120 in /api/market)",
+            description: "Whole-coin price (displayed as ₲120 in /api/market)",
           },
         },
         required: ["name", "price"],
@@ -613,7 +631,7 @@ export const openApiSpec = {
             type: "integer",
             minimum: 0,
             example: 120,
-            description: "Whole-coin price (displayed as Ǥ120 in /api/market)",
+            description: "Whole-coin price (displayed as ₲120 in /api/market)",
           },
         },
       },

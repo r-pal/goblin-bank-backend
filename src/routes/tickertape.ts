@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import type { Db } from "../db.js";
-import { buildWareMarketItem, formatAccount, resolvePriceTrend } from "../format.js";
+import { buildWareMarketItem, formatAccount } from "../format.js";
+import { resolveWareTrend, WARE_TREND_COLUMNS, type WareTrendRow } from "../trend.js";
 
 export function getTickertape(db: Db) {
   return (_req: Request, res: Response) => {
@@ -9,10 +10,8 @@ export function getTickertape(db: Db) {
       .all() as Array<{ name: string; balanceCoins: number }>;
 
     const wareRows = db
-      .prepare(
-        "SELECT name, priceCoins, trendReferencePriceCoins FROM wares ORDER BY name ASC"
-      )
-      .all() as Array<{ name: string; priceCoins: number; trendReferencePriceCoins: number }>;
+      .prepare(`SELECT name, ${WARE_TREND_COLUMNS} FROM wares ORDER BY name ASC`)
+      .all() as Array<{ name: string } & WareTrendRow>;
 
     const messageRows = db
       .prepare("SELECT text FROM messages ORDER BY rowid ASC")
@@ -21,11 +20,7 @@ export function getTickertape(db: Db) {
     res.json({
       accounts: accountsRows.map((a) => formatAccount(a.name, a.balanceCoins)),
       wares: wareRows.map((w) =>
-        buildWareMarketItem(
-          w.name,
-          w.priceCoins,
-          resolvePriceTrend(w.priceCoins, w.trendReferencePriceCoins)
-        )
+        buildWareMarketItem(w.name, w.priceCoins, resolveWareTrend(w))
       ),
       messages: messageRows.map((m) => m.text),
     });

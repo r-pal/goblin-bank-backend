@@ -23,6 +23,23 @@ export function historyRouter(db: Db): Router {
     res.json({ series: rowsToSeries(rows) });
   });
 
+  router.get("/interest-rates", (_req, res) => {
+    const rows = db
+      .prepare(
+        `
+        SELECT s.takenAt as takenAt, a.hovelSlug as key, ac.name as label, a.interestRatePercent as v
+        FROM snapshots s
+        JOIN snapshot_accounts a ON a.snapshotId = s.id
+        JOIN accounts ac ON ac.hovelSlug = a.hovelSlug
+        WHERE a.interestRatePercent IS NOT NULL
+        ORDER BY ac.name ASC, s.takenAt ASC
+      `
+      )
+      .all() as Array<{ takenAt: string; key: string; label: string; v: number }>;
+
+    res.json({ series: rowsToSeries(rows) });
+  });
+
   router.get("/wares", (_req, res) => {
     const rows = db
       .prepare(

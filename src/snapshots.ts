@@ -8,8 +8,8 @@ export function takeSnapshot(db: Db, takenAtIso = new Date().toISOString()): { i
     db.prepare("INSERT INTO snapshots (id, takenAt) VALUES (?, ?)").run(id, takenAtIso);
 
     db.exec(`
-      INSERT INTO snapshot_accounts (snapshotId, hovelSlug, balanceCoins)
-      SELECT '${id}', hovelSlug, balanceCoins
+      INSERT INTO snapshot_accounts (snapshotId, hovelSlug, balanceCoins, interestRatePercent)
+      SELECT '${id}', hovelSlug, balanceCoins, interestRatePercent
       FROM accounts;
     `);
 

@@ -38,7 +38,9 @@ export function initDb(db: Db): void {
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       priceCoins INTEGER NOT NULL CHECK (priceCoins >= 0),
-      trendReferencePriceCoins INTEGER NOT NULL CHECK (trendReferencePriceCoins >= 0)
+      trendReferencePriceCoins INTEGER NOT NULL CHECK (trendReferencePriceCoins >= 0),
+      trendDirection TEXT,
+      trendUntil TEXT
     );
 
     CREATE TABLE IF NOT EXISTS messages (
@@ -55,6 +57,7 @@ export function initDb(db: Db): void {
       snapshotId TEXT NOT NULL,
       hovelSlug TEXT NOT NULL,
       balanceCoins INTEGER NOT NULL,
+      interestRatePercent INTEGER,
       PRIMARY KEY (snapshotId, hovelSlug),
       FOREIGN KEY (snapshotId) REFERENCES snapshots(id) ON DELETE CASCADE
     );
@@ -69,8 +72,20 @@ export function initDb(db: Db): void {
   `);
 
   ensureInterestRateColumn(db);
+  ensureSnapshotAccountInterestColumn(db);
   ensureTrendReferenceColumn(db);
+  ensureTrendLockColumns(db);
   seedAccounts(db);
+}
+
+function ensureTrendLockColumns(db: Db): void {
+  const cols = db.prepare("PRAGMA table_info(wares)").all() as Array<{ name: string }>;
+  if (!cols.some((c) => c.name === "trendDirection")) {
+    db.exec("ALTER TABLE wares ADD COLUMN trendDirection TEXT");
+  }
+  if (!cols.some((c) => c.name === "trendUntil")) {
+    db.exec("ALTER TABLE wares ADD COLUMN trendUntil TEXT");
+  }
 }
 
 /** Deletes all data and re-seeds default hovel accounts at zero balance. */
@@ -104,6 +119,13 @@ function ensureInterestRateColumn(db: Db): void {
   db.exec(
     `ALTER TABLE accounts ADD COLUMN interestRatePercent INTEGER NOT NULL DEFAULT ${DEFAULT_INTEREST_RATE_PERCENT}`
   );
+}
+
+function ensureSnapshotAccountInterestColumn(db: Db): void {
+  const cols = db.prepare("PRAGMA table_info(snapshot_accounts)").all() as Array<{ name: string }>;
+  if (cols.some((c) => c.name === "interestRatePercent")) return;
+
+  db.exec("ALTER TABLE snapshot_accounts ADD COLUMN interestRatePercent INTEGER");
 }
 
 function seedAccounts(db: Db): void {
