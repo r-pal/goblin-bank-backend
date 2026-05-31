@@ -14,6 +14,7 @@ export const openApiSpec = {
     { name: "Messages", description: "Market messages" },
     { name: "History", description: "Time-series for charts" },
     { name: "Snapshots", description: "Manual snapshot capture" },
+    { name: "Admin", description: "Destructive admin operations" },
     { name: "Health", description: "Health check" },
   ],
   paths: {
@@ -53,6 +54,24 @@ export const openApiSpec = {
                   ],
                   messages: ["Welcome to the Goblin Market"],
                 },
+              },
+            },
+          },
+        },
+      },
+    },
+    "/api/accounts": {
+      get: {
+        tags: ["Accounts"],
+        summary: "List hovel accounts (structured)",
+        description:
+          "Returns raw coin balances and interest rates for admin UIs. Ordered by hovel name.",
+        responses: {
+          "200": {
+            description: "Accounts list",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/AccountsListResponse" },
               },
             },
           },
@@ -134,6 +153,21 @@ export const openApiSpec = {
       },
     },
     "/api/wares": {
+      get: {
+        tags: ["Wares"],
+        summary: "List wares (structured)",
+        description: "Returns ware ids and raw coin prices. Ordered by ware name.",
+        responses: {
+          "200": {
+            description: "Wares list",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/WaresListResponse" },
+              },
+            },
+          },
+        },
+      },
       post: {
         tags: ["Wares"],
         summary: "Create a ware",
@@ -202,6 +236,21 @@ export const openApiSpec = {
       },
     },
     "/api/messages": {
+      get: {
+        tags: ["Messages"],
+        summary: "List messages (structured)",
+        description: "Returns message ids for admin UIs. Ordered by insertion order.",
+        responses: {
+          "200": {
+            description: "Messages list",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/MessagesListResponse" },
+              },
+            },
+          },
+        },
+      },
       post: {
         tags: ["Messages"],
         summary: "Create a message",
@@ -321,6 +370,34 @@ export const openApiSpec = {
         },
       },
     },
+    "/api/admin/reset": {
+      post: {
+        tags: ["Admin"],
+        summary: "Wipe database and re-seed accounts",
+        description:
+          "Deletes all accounts, wares, messages, and history snapshots, then re-creates default hovel accounts at zero balance. Requires the full admin secret (`snivell`).",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/AdminResetRequest" },
+            },
+          },
+        },
+        responses: {
+          "200": {
+            description: "Database reset",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/OkResponse" },
+              },
+            },
+          },
+          "400": { $ref: "#/components/responses/BadRequest" },
+          "403": { $ref: "#/components/responses/Forbidden" },
+        },
+      },
+    },
   },
   components: {
     parameters: {
@@ -371,15 +448,15 @@ export const openApiSpec = {
           name: { type: "string", example: "Frogs" },
           price: {
             type: "string",
-            description: "Optional ▲/▼ prefix plus Ǥ amount",
-            example: "▲ Ǥ120",
+            description: "Ǥ amount",
+            example: "Ǥ120",
           },
           trend: {
             type: "string",
             nullable: true,
             enum: ["up", "down", null],
             description:
-              "`up` or `down` vs the last snapshot price; `null` if unchanged or no snapshot yet",
+              "`up` or `down` vs the ware's trend baseline; `null` if unchanged. Baseline resets on each half-hour snapshot.",
           },
         },
         required: ["name", "price", "trend"],
@@ -392,6 +469,54 @@ export const openApiSpec = {
           messages: { type: "array", items: { type: "string" } },
         },
         required: ["accounts", "wares", "messages"],
+      },
+      Account: {
+        type: "object",
+        properties: {
+          hovelSlug: { type: "string" },
+          name: { type: "string" },
+          balanceCoins: { type: "integer" },
+          interestRatePercent: { type: "integer" },
+        },
+        required: ["hovelSlug", "name", "balanceCoins", "interestRatePercent"],
+      },
+      AccountsListResponse: {
+        type: "object",
+        properties: {
+          accounts: { type: "array", items: { $ref: "#/components/schemas/Account" } },
+        },
+        required: ["accounts"],
+      },
+      Ware: {
+        type: "object",
+        properties: {
+          id: { type: "string", format: "uuid" },
+          name: { type: "string" },
+          priceCoins: { type: "integer" },
+        },
+        required: ["id", "name", "priceCoins"],
+      },
+      WaresListResponse: {
+        type: "object",
+        properties: {
+          wares: { type: "array", items: { $ref: "#/components/schemas/Ware" } },
+        },
+        required: ["wares"],
+      },
+      Message: {
+        type: "object",
+        properties: {
+          id: { type: "string", format: "uuid" },
+          text: { type: "string" },
+        },
+        required: ["id", "text"],
+      },
+      MessagesListResponse: {
+        type: "object",
+        properties: {
+          messages: { type: "array", items: { $ref: "#/components/schemas/Message" } },
+        },
+        required: ["messages"],
       },
       CoinChangeRequest: {
         type: "object",
@@ -501,6 +626,16 @@ export const openApiSpec = {
         },
         required: ["id", "takenAt"],
       },
+      AdminResetRequest: {
+        type: "object",
+        properties: {
+          secret: {
+            type: "string",
+            description: "Full admin secret (snivell's password)",
+          },
+        },
+        required: ["secret"],
+      },
     },
     responses: {
       BadRequest: {
@@ -513,6 +648,14 @@ export const openApiSpec = {
       },
       NotFound: {
         description: "Not found",
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/ErrorResponse" },
+          },
+        },
+      },
+      Forbidden: {
+        description: "Forbidden",
         content: {
           "application/json": {
             schema: { $ref: "#/components/schemas/ErrorResponse" },

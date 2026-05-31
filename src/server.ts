@@ -12,10 +12,32 @@ import { waresRouter } from "./routes/wares.js";
 import { messagesRouter } from "./routes/messages.js";
 import { historyRouter } from "./routes/history.js";
 import { snapshotsRouter } from "./routes/snapshots.js";
+import { adminRouter } from "./routes/admin.js";
 import { swaggerRouter } from "./swagger.js";
 
 const app = express();
 app.use(express.json());
+
+// Minimal CORS for browser dev/prod. (Dev can also rely on a Vite proxy.)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowedOrigin = process.env.VITE_ORIGIN ?? "http://localhost:5173";
+  if (origin && origin === allowedOrigin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "content-type, authorization, x-requested-with",
+    );
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
+  }
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+  next();
+});
 
 const db = openDb();
 initDb(db);
@@ -31,6 +53,7 @@ app.use("/api/wares", waresRouter(db));
 app.use("/api/messages", messagesRouter(db));
 app.use("/api/history", historyRouter(db));
 app.use("/api/snapshots", snapshotsRouter(db));
+app.use("/api/admin", adminRouter(db));
 
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof HttpError) {

@@ -18,6 +18,8 @@ export function takeSnapshot(db: Db, takenAtIso = new Date().toISOString()): { i
       SELECT '${id}', id, priceCoins
       FROM wares;
     `);
+
+    db.exec("UPDATE wares SET trendReferencePriceCoins = priceCoins");
   });
 
   tx();

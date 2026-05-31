@@ -6,17 +6,23 @@ import { HttpError, asNonEmptyString, parsePriceCoins } from "../validate.js";
 export function waresRouter(db: Db): Router {
   const router = Router();
 
+  router.get("/", (_req, res) => {
+    const wares = db
+      .prepare("SELECT id, name, priceCoins FROM wares ORDER BY name ASC")
+      .all() as Array<{ id: string; name: string; priceCoins: number }>;
+
+    res.json({ wares });
+  });
+
   router.post("/", (req, res) => {
     const body = req.body ?? {};
     const name = asNonEmptyString(body.name, "name");
     const priceCoins = parsePriceCoins(body.price, "price");
     const id = randomUUID();
 
-    db.prepare("INSERT INTO wares (id, name, priceCoins) VALUES (?, ?, ?)").run(
-      id,
-      name,
-      priceCoins
-    );
+    db.prepare(
+      "INSERT INTO wares (id, name, priceCoins, trendReferencePriceCoins) VALUES (?, ?, ?, ?)"
+    ).run(id, name, priceCoins, priceCoins);
 
     res.status(201).json({ id });
   });

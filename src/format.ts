@@ -25,10 +25,9 @@ export function buildWareMarketItem(
   priceCoins: number,
   trend?: PriceTrend
 ): WareMarketItem {
-  const arrow = trend === "up" ? "▲ " : trend === "down" ? "▼ " : "";
   return {
     name,
-    price: `${arrow}${formatCoins(priceCoins)}`,
+    price: `${formatCoins(priceCoins)}`,
     trend: trend ?? null,
   };
 }

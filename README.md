@@ -21,7 +21,7 @@ Server defaults to `http://localhost:4000`.
 - `GET /api/market`
   - Returns `{ accounts: string[]; wares: WareMarketItem[]; messages: string[] }`
   - Account amounts are prefixed with **Ǥ** (whole coins, no decimals)
-  - Each ware has `name`, `price` (optional **▲**/**▼** plus **Ǥ** amount), and `trend` (`"up"`, `"down"`, or `null`)
+  - Each ware has `name`, `price` ( **Ǥ** amount), and `trend` (`"up"`, `"down"`, or `null`). Trend updates immediately on price change; it clears at the next half-hour snapshot if the price is unchanged.
 
 ## Examples
 

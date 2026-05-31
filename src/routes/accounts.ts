@@ -5,6 +5,21 @@ import { HttpError, asInt, asInterestRatePercent } from "../validate.js";
 export function accountsRouter(db: Db): Router {
   const router = Router();
 
+  router.get("/", (_req, res) => {
+    const accounts = db
+      .prepare(
+        "SELECT hovelSlug, name, balanceCoins, interestRatePercent FROM accounts ORDER BY name ASC",
+      )
+      .all() as Array<{
+      hovelSlug: string;
+      name: string;
+      balanceCoins: number;
+      interestRatePercent: number;
+    }>;
+
+    res.json({ accounts });
+  });
+
   router.post("/:hovelSlug/coin-change", (req, res) => {
     const hovelSlug = req.params.hovelSlug;
     const amount = asInt((req.body ?? {}).amount, "amount");

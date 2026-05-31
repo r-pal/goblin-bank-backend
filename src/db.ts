@@ -37,7 +37,8 @@ export function initDb(db: Db): void {
     CREATE TABLE IF NOT EXISTS wares (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
-      priceCoins INTEGER NOT NULL CHECK (priceCoins >= 0)
+      priceCoins INTEGER NOT NULL CHECK (priceCoins >= 0),
+      trendReferencePriceCoins INTEGER NOT NULL CHECK (trendReferencePriceCoins >= 0)
     );
 
     CREATE TABLE IF NOT EXISTS messages (
@@ -68,7 +69,32 @@ export function initDb(db: Db): void {
   `);
 
   ensureInterestRateColumn(db);
+  ensureTrendReferenceColumn(db);
   seedAccounts(db);
+}
+
+/** Deletes all data and re-seeds default hovel accounts at zero balance. */
+export function resetDatabase(db: Db): void {
+  const tx = db.transaction(() => {
+    db.exec(`
+      DELETE FROM snapshot_wares;
+      DELETE FROM snapshot_accounts;
+      DELETE FROM snapshots;
+      DELETE FROM messages;
+      DELETE FROM wares;
+      DELETE FROM accounts;
+    `);
+    seedAccounts(db);
+  });
+  tx();
+}
+
+function ensureTrendReferenceColumn(db: Db): void {
+  const cols = db.prepare("PRAGMA table_info(wares)").all() as Array<{ name: string }>;
+  if (cols.some((c) => c.name === "trendReferencePriceCoins")) return;
+
+  db.exec("ALTER TABLE wares ADD COLUMN trendReferencePriceCoins INTEGER");
+  db.exec("UPDATE wares SET trendReferencePriceCoins = priceCoins");
 }
 
 function ensureInterestRateColumn(db: Db): void {

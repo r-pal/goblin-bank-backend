@@ -6,6 +6,14 @@ import { HttpError, asNonEmptyString } from "../validate.js";
 export function messagesRouter(db: Db): Router {
   const router = Router();
 
+  router.get("/", (_req, res) => {
+    const messages = db
+      .prepare("SELECT id, text FROM messages ORDER BY rowid ASC")
+      .all() as Array<{ id: string; text: string }>;
+
+    res.json({ messages });
+  });
+
   router.post("/", (req, res) => {
     const body = req.body ?? {};
     const text = asNonEmptyString(body.text, "text");
