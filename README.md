@@ -11,6 +11,16 @@ npm run dev
 
 Server defaults to `http://localhost:4000`.
 
+## First-run demo data
+
+On a **fresh database** (no accounts yet), the server seeds:
+
+- All seven hovel accounts at **₲1,000** each
+- Wares: Frogs (₲120), Rings (₲500), Cards (₲25), Dice (₲15)
+- Messages: “Welcome to Ragnarök!”, “Stock market now open”
+
+**Office → Bank → Reset all** wipes wares, messages, and history and restores hovels at **₲0** with no demo market data. To get the demo again, delete `data/goblin-bank.sqlite` and restart.
+
 ## API docs (Swagger)
 
 - Swagger UI: `http://localhost:4000/api-docs`

@@ -1,4 +1,5 @@
 import Database from "better-sqlite3";
+import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { DEFAULT_INTEREST_RATE_PERCENT } from "./interest.js";
@@ -14,6 +15,17 @@ const DEFAULT_HOVELS: Array<{ slug: string; name: string }> = [
   { slug: "muckroot-ha", name: "Muckroot Ha" },
   { slug: "bric-a-barracks", name: "Bric-a-Barracks" },
 ];
+
+const DEMO_STARTING_BALANCE = 1_000;
+
+const DEMO_WARES: { name: string; priceCoins: number }[] = [
+  { name: "Frogs", priceCoins: 120 },
+  { name: "Rings", priceCoins: 500 },
+  { name: "Cards", priceCoins: 25 },
+  { name: "Dice", priceCoins: 15 },
+];
+
+const DEMO_MESSAGES = ["Welcome to Ragnarök!", "Stock market now open"] as const;
 
 export function openDb(): Db {
   const dataDir = path.join(process.cwd(), "data");
@@ -75,7 +87,7 @@ export function initDb(db: Db): void {
   ensureSnapshotAccountInterestColumn(db);
   ensureTrendReferenceColumn(db);
   ensureTrendLockColumns(db);
-  seedAccounts(db);
+  seedInitialDemo(db);
 }
 
 function ensureTrendLockColumns(db: Db): void {
@@ -88,7 +100,7 @@ function ensureTrendLockColumns(db: Db): void {
   }
 }
 
-/** Deletes all data and re-seeds default hovel accounts at zero balance. */
+/** Deletes all data and re-seeds default hovel accounts at zero balance (no demo wares/messages). */
 export function resetDatabase(db: Db): void {
   const tx = db.transaction(() => {
     db.exec(`
@@ -99,7 +111,7 @@ export function resetDatabase(db: Db): void {
       DELETE FROM wares;
       DELETE FROM accounts;
     `);
-    seedAccounts(db);
+    seedAccounts(db, 0);
   });
   tx();
 }
@@ -128,7 +140,33 @@ function ensureSnapshotAccountInterestColumn(db: Db): void {
   db.exec("ALTER TABLE snapshot_accounts ADD COLUMN interestRatePercent INTEGER");
 }
 
-function seedAccounts(db: Db): void {
+function seedInitialDemo(db: Db): void {
+  const { c: accountCount } = db.prepare("SELECT COUNT(*) as c FROM accounts").get() as { c: number };
+  if (accountCount > 0) return;
+
+  const insertAccount = db.prepare(
+    "INSERT INTO accounts (hovelSlug, name, balanceCoins, interestRatePercent) VALUES (?, ?, ?, ?)"
+  );
+  const insertWare = db.prepare(
+    "INSERT INTO wares (id, name, priceCoins, trendReferencePriceCoins, trendDirection, trendUntil) VALUES (?, ?, ?, ?, NULL, NULL)"
+  );
+  const insertMessage = db.prepare("INSERT INTO messages (id, text) VALUES (?, ?)");
+
+  const tx = db.transaction(() => {
+    for (const h of DEFAULT_HOVELS) {
+      insertAccount.run(h.slug, h.name, DEMO_STARTING_BALANCE, DEFAULT_INTEREST_RATE_PERCENT);
+    }
+    for (const w of DEMO_WARES) {
+      insertWare.run(randomUUID(), w.name, w.priceCoins, w.priceCoins);
+    }
+    for (const text of DEMO_MESSAGES) {
+      insertMessage.run(randomUUID(), text);
+    }
+  });
+  tx();
+}
+
+function seedAccounts(db: Db, startingBalance: number): void {
   const count = db.prepare("SELECT COUNT(*) as c FROM accounts").get() as { c: number };
   if (count.c > 0) return;
 
@@ -137,7 +175,7 @@ function seedAccounts(db: Db): void {
   );
   const tx = db.transaction(() => {
     for (const h of DEFAULT_HOVELS) {
-      insert.run(h.slug, h.name, 0, DEFAULT_INTEREST_RATE_PERCENT);
+      insert.run(h.slug, h.name, startingBalance, DEFAULT_INTEREST_RATE_PERCENT);
     }
   });
   tx();
